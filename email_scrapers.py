@@ -27,7 +27,7 @@ def get_email_from_loopers(url):
         return list(set(emails_list))
     
 # =============== verifing emails ======================
-sdfd
+
 def get_valided_emails(emails):
     verify_emails_list = []
     for email in emails:
