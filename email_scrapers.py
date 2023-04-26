@@ -164,8 +164,6 @@ def Email_Scrapper():
 
     # ===============Emails From Loopers===================
     emails = get_all_emails_from_loopers(url)
-    emails = get_all_emails_from_loopers(url)
-
 
     if emails:
         return emails
