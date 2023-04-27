@@ -5,12 +5,59 @@ from verify_email import verify_email
 import re
 import requests
 from driver import Driver
+from database_connection import Database_Connection
+from niche_details import *
 
 # =============== declaring functions =================
 # =============== taking url main domain ==============
 
+
+
+
+def fetch_mysql_query_executer(query):
+    db_connection,db_cursor = Database_Connection()
+    try:
+        db_cursor.execute(query)
+        data = db_cursor.fetchall()
+        db_cursor.close()
+        return data
+    except Exception as e:
+        print(f'Exception: {e}')
+
+def commit_mysql_query_executer(query):
+    db_connection,db_cursor = Database_Connection()
+    try:
+        db_cursor.execute(query)
+        db_connection.commit()
+        db_cursor.close()
+    except Exception as e:
+        print(f'Exception: {e}')
+
+def update_email_to_database(gl_id,emails,data_table):
+    query = f"update {data_table} set email = '{emails}' where gl_id = {gl_id}"
+    flag_query =f"update {data_table} set email_done_flag = 1 where gl_id = {gl_id}"
+    commit_mysql_query_executer(query)
+   
+    commit_mysql_query_executer(flag_query)
+    
+
+def get_gl_id_and_gl_website_from_db(data_table):
+    query = f"select gl_id,gl_website from {data_table} where gl_website !='None' and gl_website is not null and email_done_flag is null order by rand() limit 1;"
+    data = fetch_mysql_query_executer(query)
+    return data[0]
+    
+def get_remaining_count_of_website(data_table):
+    query = f"select count(*) from {data_table} where gl_website !='None' and gl_website is not null and email_done_flag is null;"
+    data = fetch_mysql_query_executer(query)
+    return data[0][0]
+    
+
 def get_email_from_loopers(url):
-    loopers_dict_value = list(loop(url).values())
+    try:
+        loopers_dict_value = list(loop(url).values())
+    except Exception as e:
+        loopers_dict_value = None
+        print(f"Exception : {e}")
     if loopers_dict_value:
         emails_list  = loopers_dict_value[0]['emails']
     else:
@@ -19,7 +66,7 @@ def get_email_from_loopers(url):
     if emails_list is None:
         return None
     else:
-        return list(set(emails_list))
+        return set(emails_list)
     
 # =============== verifing emails ======================
 
@@ -70,9 +117,14 @@ def get_contact_urls(url):
 def get_page_source(url):
 
     driver = Driver()
-    driver.get(url)
-    page_source_txt = str(driver.page_source)
-    driver.close()
+    try:
+        driver.get(url)
+        page_source_txt = str(driver.page_source)
+        driver.close()
+    except Exception as e:
+        page_source_txt = " "
+        print(f"Exception : {e}")
+    
     return page_source_txt
 
 def get_email_from_selenium_webdriver(url):
@@ -103,32 +155,34 @@ def get_all_emails_from_loopers(url):
             if email_from_contact_url:
                 break
         if email_from_home is not None and email_from_contact_url is not None:
-            emails = list(set(email_from_home + email_from_contact_url))
+            emails_lists = email_from_home.union(email_from_contact_url)
+            emails = list(emails_lists)
         elif email_from_home is not None:
-            emails = list(set(email_from_home))
+            emails = list(email_from_home)
         elif email_from_contact_url is not None:
-            emails = list(set(email_from_contact_url))
+            emails = list(email_from_contact_url)
         else:
             emails = None
-        return emails
+        return emails,contact_url
     else:
-        return None
+        return None,contact_url
 
-def get_all_emails_from_selenium(url):
+def get_all_emails_from_selenium(url,contact_url):
 
-    email_from_home = get_email_from_selenium_webdriver(url)
-    contact_url = get_contact_urls(url)
+    email_from_home = (get_email_from_selenium_webdriver(url))
+    # contact_url = get_contact_urls(url)
     if contact_url:
         for url in contact_url:
-            email_from_contact_url = get_email_from_selenium_webdriver(url)
+            email_from_contact_url = (get_email_from_selenium_webdriver(url))
             if email_from_contact_url:
                 break
         if email_from_home is not None and email_from_contact_url is not None:
-            emails = list(set(email_from_home + email_from_contact_url))
+            emails_lists = email_from_home.union(email_from_contact_url)
+            emails = list(emails_lists)
         elif email_from_home is not None:
-            emails = list(set(email_from_home))
+            emails = list(email_from_home)
         elif email_from_contact_url is not None:
-            emails = list(set(email_from_contact_url))
+            emails = list(email_from_contact_url)
         else:
             emails = None
         return emails  
@@ -150,36 +204,58 @@ def get_valid_emails(emails):
     return valid_emails
     
 
-def Email_Scrapper():
+def Email_Scrapper(url):
     # url='https://www.vmokshagroup.com/'
     # url = "https://usbiomag.com/"
     # url = "https://www.ancientrootsacu.com/" #selenium
     # url = "https://www.zentralabq.com" #***selenium
-    url = "https://www.onpoint-acupuncture.com/" #***selenium
+    # url = "https://www.onpoint-acupuncture.com/" #***selenium
 
     # url = "https://www.rover.com/" #***
     # url = "https://gpcacupuncture.com/"
-    url = "https://www.jadestaracupuncture.com/" #*** 
-    url = "http://www.tucsonacupuncture.com/" #selenu
+    # url = "https://www.jadestaracupuncture.com/" #*** 
+    # url = "http://www.tucsonacupuncture.com/" #selenu
 
     # ===============Emails From Loopers===================
-    emails = get_all_emails_from_loopers(url)
+    emails,contact_url = get_all_emails_from_loopers(url)
 
     if emails:
         return emails
     else:
-        emails = get_all_emails_from_selenium(url)
+        emails = get_all_emails_from_selenium(url,contact_url)
         return emails
               
 
 if __name__=='__main__':
-    emails = Email_Scrapper()
-    print(emails)
-    if emails:
-        valid_emails = get_valid_emails(emails)
-        print(valid_emails)
+    # emails = Email_Scrapper()
+    # print(emails)
+    # if emails:
+    #     valid_emails = get_valid_emails(emails)
+    #     print(valid_emails)
     # validated_emails = get_valided_emails(emails)
-    # print(f"valid emails {validated_emails}")
-    
-    
-    
+    # print(f"valid emails : {validated_emails}")
+    # get_gl_id_and_gl_website_from_db(data_table)
+
+   
+
+    remaining_website_count = get_remaining_count_of_website(data_table) 
+    while remaining_website_count>0:
+        data = get_gl_id_and_gl_website_from_db(data_table)
+        url = data[1]
+        gl_id = data[0]
+        emails = Email_Scrapper(url)
+
+        if emails:
+            valid_emails = get_valid_emails(emails)
+            emails_string = str(valid_emails).replace('[','').replace(']','').replace("'","")
+            update_email_to_database(gl_id,emails_string,data_table)
+           
+          
+            print(emails_string)
+
+        remaining_website_count = get_remaining_count_of_website(data_table) 
+        
+   
+
+
+
