@@ -7,12 +7,10 @@ import requests
 from driver import Driver
 from database_connection import Database_Connection
 from niche_details import *
+from retry import retry
 
 # =============== declaring functions =================
 # =============== taking url main domain ==============
-
-
-
 
 def fetch_mysql_query_executer(query):
     db_connection,db_cursor = Database_Connection()
@@ -202,7 +200,6 @@ def get_valid_emails(emails):
                 valid_emails.append(email)
         
     return valid_emails
-    
 
 def Email_Scrapper(url):
     # url='https://www.vmokshagroup.com/'
@@ -223,21 +220,11 @@ def Email_Scrapper(url):
         return emails
     else:
         emails = get_all_emails_from_selenium(url,contact_url)
+ 
         return emails
-              
 
-if __name__=='__main__':
-    # emails = Email_Scrapper()
-    # print(emails)
-    # if emails:
-    #     valid_emails = get_valid_emails(emails)
-    #     print(valid_emails)
-    # validated_emails = get_valided_emails(emails)
-    # print(f"valid emails : {validated_emails}")
-    # get_gl_id_and_gl_website_from_db(data_table)
-
-   
-
+# @retry()
+def main():
     remaining_website_count = get_remaining_count_of_website(data_table) 
     while remaining_website_count>0:
         data = get_gl_id_and_gl_website_from_db(data_table)
@@ -250,10 +237,22 @@ if __name__=='__main__':
             emails_string = str(valid_emails).replace('[','').replace(']','').replace("'","")
             update_email_to_database(gl_id,emails_string,data_table)
            
-          
             print(emails_string)
 
         remaining_website_count = get_remaining_count_of_website(data_table) 
+if __name__=='__main__':
+    # emails = Email_Scrapper()
+    # print(emails)
+    # if emails:
+    #     valid_emails = get_valid_emails(emails)
+    #     print(valid_emails)
+    # validated_emails = get_valided_emails(emails)
+    # print(f"valid emails : {validated_emails}")
+    # get_gl_id_and_gl_website_from_db(data_table)
+
+    main()
+
+    
         
    
 
