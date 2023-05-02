@@ -240,7 +240,8 @@ def main():
         if emails:
             valid_emails = get_valid_emails(emails)
             emails_string = str(valid_emails).replace('[','').replace(']','').replace("'","")
-            update_email_to_database(gl_id,emails_string,data_table)
+            if emails_string !='':
+                update_email_to_database(gl_id,emails_string,data_table)
            
             print(emails_string)
 
