@@ -88,17 +88,22 @@ def get_status_of_url(contact_url):
         statusCode = 404
     return statusCode
 
-def get_contact_urls(url):
-    contact_sub_domain_list = [
-       'contact-us-and-hours','contact','contactus','contacts','contact-us','contact-us.php','contactus.php','contact.php','contactus.html','about-us','aboutus','contact.html'
-    ]
-    contact_sub_domain_url = []
+def get_domain(url):
     regex = r"^(?:https?:\/\/)?(?:[^@\/\n]+@)?(?:www\.)?([^:\/\n]+)"
     regex_home_url_object = re.finditer(regex,url)
 
     for url in regex_home_url_object:
         home_url = (str(url).split("='")[-1].replace("'>",""))
+    return home_url
+
+def get_contact_urls(url):
+    contact_sub_domain_list = [
+       'contact-us-and-hours','contact','contactus','contacts','contact-us','contact-us.php','contactus.php','contact.php','contactus.html','about-us','aboutus','contact.html'
+    ]
+    contact_sub_domain_url = []
     
+    home_url = get_domain(url)
+
     for contact_sub_domain in contact_sub_domain_list:
         contact_url = f"{home_url}/{contact_sub_domain}"
         print(contact_url)
@@ -141,6 +146,7 @@ def get_email_from_selenium_webdriver(url):
     except Exception as err:
         print(" {} \nFailed to read page!".format(err))
         return None
+    
 
 def get_all_emails_from_loopers(url):
     email_from_home = get_email_from_loopers(url)
@@ -149,7 +155,6 @@ def get_all_emails_from_loopers(url):
     if contact_url:
         for url in contact_url:
             email_from_contact_url = get_email_from_loopers(url)
-            # print(email_from_contact_url)
             if email_from_contact_url:
                 break
         if email_from_home is not None and email_from_contact_url is not None:
@@ -167,11 +172,11 @@ def get_all_emails_from_loopers(url):
 
 def get_all_emails_from_selenium(url,contact_url):
 
-    email_from_home = (get_email_from_selenium_webdriver(url))
+    email_from_home = get_email_from_selenium_webdriver(url)
     # contact_url = get_contact_urls(url)
     if contact_url:
         for url in contact_url:
-            email_from_contact_url = (get_email_from_selenium_webdriver(url))
+            email_from_contact_url = get_email_from_selenium_webdriver(url)
             if email_from_contact_url:
                 break
         if email_from_home is not None and email_from_contact_url is not None:
@@ -223,7 +228,7 @@ def Email_Scrapper(url):
  
         return emails
 
-# @retry()
+@retry()
 def main():
     remaining_website_count = get_remaining_count_of_website(data_table) 
     while remaining_website_count>0:
@@ -247,9 +252,8 @@ if __name__=='__main__':
     #     valid_emails = get_valid_emails(emails)
     #     print(valid_emails)
     # validated_emails = get_valided_emails(emails)
-    # print(f"valid emails : {validated_emails}")
+    # print(f"valid emails : {validated_emails}")  
     # get_gl_id_and_gl_website_from_db(data_table)
-
     main()
 
     
