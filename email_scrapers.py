@@ -35,7 +35,6 @@ def update_email_to_database(gl_id,emails,data_table):
     query = f"update {data_table} set email = '{emails}' where gl_id = {gl_id}"
     flag_query =f"update {data_table} set email_done_flag = 1 where gl_id = {gl_id}"
     commit_mysql_query_executer(query)
-   
     commit_mysql_query_executer(flag_query)
     
 
@@ -49,7 +48,6 @@ def get_remaining_count_of_website(data_table):
     data = fetch_mysql_query_executer(query)
     return data[0][0]
     
-
 def get_email_from_loopers(url):
     try:
         loopers_dict_value = list(loop(url).values())
@@ -76,8 +74,7 @@ def get_valided_emails(emails):
                 verify_emails_list.append(email)
         return verify_emails_list
     else:
-        return None
-  
+        return None 
 
 # ================ checking url status ==================
 
@@ -117,6 +114,8 @@ def get_contact_urls(url):
     return contact_sub_domain_url
 
 # =================== declaration of main function ===================
+
+@retry(tries=3)
 def get_page_source(url):
 
     driver = Driver()
@@ -146,7 +145,6 @@ def get_email_from_selenium_webdriver(url):
     except Exception as err:
         print(" {} \nFailed to read page!".format(err))
         return None
-    
 
 def get_all_emails_from_loopers(url):
     email_from_home = get_email_from_loopers(url)
@@ -246,6 +244,7 @@ def main():
             print(emails_string)
 
         remaining_website_count = get_remaining_count_of_website(data_table) 
+        
 if __name__=='__main__':
     # emails = Email_Scrapper()
     # print(emails)
